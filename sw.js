@@ -1,5 +1,5 @@
 // Tudo o que ela vê — guarda o app e os vídeos no celular para tocar sem espera e sem internet.
-const CASCA = "tqev-casca-v2", VIDEOS = "tqev-videos-v1";
+const CASCA = "tqev-casca-v3", VIDEOS = "tqev-videos-v1";
 const ARQ = ["./", "index.html", "manifest.json", "app_imagens/ep01.jpg", "app_imagens/ep02.jpg", "app_imagens/ep03.jpg", "app_imagens/icone-192.png", "app_imagens/icone-512.png"];
 
 self.addEventListener("install", e => e.waitUntil(caches.open(CASCA).then(c => c.addAll(ARQ)).then(() => self.skipWaiting())));

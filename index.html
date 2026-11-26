@@ -283,6 +283,12 @@ p.texto{max-width:620px;color:var(--muted);line-height:1.6;margin:0 auto 26px;fo
   </div>
   <div id="fim-proximo"></div>
   <div class="linha-btns"><button class="btn sec" id="fim-voltar">Voltar aos episódios</button></div>
+  <div class="caixa-consent" style="margin-top:26px;text-align:center">
+    <span class="provisorio">Fase de teste</span>
+    <p style="margin:4px 0 12px;color:var(--muted)">Está ajudando a testar a novela? Se quiser, mande para a equipe os conselhos que você deu e o que achou. Só vai se você tocar no botão.</p>
+    <div class="linha-btns"><button class="btn peq" id="enviar-teste">Enviar pelo WhatsApp</button><button class="btn sec peq" id="copiar-teste">Copiar texto</button></div>
+    <p class="miudo" id="enviar-msg"></p>
+  </div>
 </section>
 
 <!-- 6. Convite da amiga de IA (2º tempo do consentimento) -->
@@ -733,6 +739,26 @@ $("off-baixar").onclick = () => baixarTemporada(false);
 $("off-apagar").onclick = async () => { await caches.delete(CACHE_VID); atualizarOffline(); };
 $("off-auto").onchange = e => { E.autoWifi = e.target.checked; salvar(); if(E.autoWifi && noWifi()) baixarTemporada(true); };
 navigator.connection?.addEventListener?.("change", () => { if(E.autoWifi && noWifi()) baixarTemporada(true); });
+
+
+/* ---------- Fase de teste: a própria testadora envia as respostas ---------- */
+function textoTeste(){
+  const L = ["Tudo o que ela vê — minhas respostas (teste)", ""];
+  EPS.forEach(ep => {
+    const s = epEstado(ep.n); const esc = ep.passos.filter(p => p.esc);
+    if(!esc.some(p => s.escolhas[p.esc.id])) return;
+    L.push(`Episódio ${ep.n} · ${ep.titulo}${s.concluido ? "" : " (não terminei)"}`);
+    esc.forEach(p => { const r = s.escolhas[p.esc.id]; if(r) L.push(`- ${p.esc.titulo}: ${r.opcao}) ${r.texto}`); });
+    L.push("");
+  });
+  L.push("O que achei: ");
+  return L.join("\n");
+}
+$("enviar-teste").onclick = () => { window.open("https://wa.me/?text=" + encodeURIComponent(textoTeste()), "_blank"); };
+$("copiar-teste").onclick = async () => {
+  try{ await navigator.clipboard.writeText(textoTeste()); $("enviar-msg").textContent = "Texto copiado. É só colar na conversa."; }
+  catch(e){ $("enviar-msg").textContent = textoTeste(); }
+};
 
 /* ---------- Início ---------- */
 if(YT_MODO) ytCarregarApi();
