@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tudo o que ela vê</title>
+<meta name="theme-color" content="#0d0b10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="app_imagens/icone-192.png">
+<link rel="apple-touch-icon" href="app_imagens/icone-192.png">
+
+<style>
+:root{--bg:#0d0b10;--ink:#f4efe9;--muted:#b9aeb4;--rosa:#e7a3b4;--marinho:#1c2340;--lilas:#b9a3e3;--linha:rgba(255,255,255,.14);--card:#17131c}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif}
+.tela{position:fixed;inset:0;display:none}
+.tela.ativa{display:flex}
+.centro{align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(34px,6vw,64px);margin:0 0 6px}
+.sub{color:var(--rosa);letter-spacing:3px;text-transform:uppercase;font-size:14px;margin:0 0 24px}
+p.texto{max-width:620px;color:var(--muted);line-height:1.6;margin:0 auto 26px;font-size:16px}
+.btn{appearance:none;border:0;border-radius:12px;padding:15px 32px;font-size:17px;font-weight:600;cursor:pointer;background:var(--ink);color:#15121a;transition:transform .15s,background .15s}
+.btn:hover{transform:translateY(-1px);background:#fff}
+.btn:focus-visible,.opcao:focus-visible,.ep-card:focus-visible{outline:3px solid var(--lilas);outline-offset:3px}
+.btn.sec{background:transparent;color:var(--ink);border:1px solid var(--linha);font-weight:500;font-size:15px;padding:12px 22px}
+.btn.peq{padding:9px 16px;font-size:14px}
+.linha-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.miudo{font-size:13px;color:var(--muted);line-height:1.5;max-width:560px;margin:18px auto 0}
+.selo{display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:24px}
+.selo span{border:1px solid var(--linha);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--muted)}
+#idade,#consent{background:radial-gradient(ellipse at 30% 20%,#2a2140 0%,#0d0b10 60%)}
+.caixa-consent{max-width:640px;text-align:left;background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:22px 26px;margin:0 auto 22px;line-height:1.6;font-size:15px}
+.caixa-consent li{margin:6px 0}
+.provisorio{display:inline-block;font-size:12px;color:#ffcf8a;border:1px solid #ffcf8a66;border-radius:999px;padding:1px 10px;margin-bottom:10px}
+
+/* Temporada */
+#temporada{flex-direction:column;overflow:auto}
+.hero{position:relative;min-height:58vh;display:flex;align-items:flex-end;padding:90px 5vw 40px;background-size:cover;background-position:center}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,11,16,.95) 0%,rgba(13,11,16,.55) 55%,rgba(13,11,16,.2) 100%),linear-gradient(0deg,var(--bg) 0%,transparent 40%)}
+.hero>div{position:relative;z-index:1;max-width:640px}
+.hero h1{font-size:clamp(40px,7vw,78px)}
+.hero .meta{color:var(--muted);font-size:14px;margin:6px 0 16px}
+.hero p{color:#ddd3d7;line-height:1.55;margin:0 0 22px;font-size:16px}
+.lista{padding:10px 5vw 60px}
+.lista h2{font-size:18px;font-weight:600;margin:10px 0 16px}
+.eps{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.ep-card{background:var(--card);border:1px solid var(--linha);border-radius:14px;overflow:hidden;cursor:pointer;text-align:left;color:var(--ink);padding:0;font:inherit;transition:transform .15s,border-color .15s}
+.ep-card:hover{transform:translateY(-3px);border-color:var(--rosa)}
+.ep-card .img{aspect-ratio:16/9;background-size:cover;background-position:center;position:relative}
+.ep-card .num{position:absolute;left:12px;bottom:8px;font-family:Georgia,serif;font-size:44px;color:#fff;text-shadow:0 2px 12px #000}
+.ep-card .estado{position:absolute;right:10px;top:10px;font-size:12px;background:rgba(0,0,0,.6);border-radius:999px;padding:3px 10px}
+.ep-card .barra-ep{height:3px;background:rgba(255,255,255,.1)}
+.ep-card .barra-ep i{display:block;height:100%;background:var(--rosa)}
+.ep-card .corpo{padding:14px 16px 18px}
+.ep-card h3{margin:0 0 6px;font-size:17px}
+.ep-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+.rodape{padding:0 5vw 40px;color:var(--muted);font-size:13px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.rodape a{color:var(--muted)}
+
+/* Player */
+#player{background:#000;align-items:center;justify-content:center}
+#player video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;opacity:0;transition:opacity .25s}
+#player video.visivel{opacity:1}
+.hud{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;display:flex;gap:10px;align-items:center;background:linear-gradient(transparent,rgba(0,0,0,.7));opacity:0;transition:opacity .3s;z-index:3}
+.topo{position:absolute;left:0;right:0;top:0;padding:14px 18px;display:flex;gap:10px;align-items:center;background:linear-gradient(rgba(0,0,0,.6),transparent);opacity:0;transition:opacity .3s;z-index:7}
+#player:has(#escolha.ativa) .topo{opacity:1}
+#player.mostrar .hud,#player.mostrar .topo{opacity:1}
+.hud button,.topo button{background:rgba(255,255,255,.12);border:1px solid var(--linha);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:14px}
+.topo .tit{font-size:15px;color:#eee}
+.hud .info{font-size:13px;color:var(--muted);margin-left:auto}
+.barra{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.08);z-index:4}
+.barra i{display:block;height:100%;width:0;background:var(--rosa);transition:width .5s linear}
+.carregando{position:absolute;color:var(--muted);font-size:14px;display:none;z-index:2}
+.carregando.on{display:block}
+
+/* Escolha */
+#escolha{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(8,7,12,.72);backdrop-filter:blur(6px);padding:24px;z-index:6}
+#escolha.ativa{display:flex}
+.esc-caixa{width:min(780px,100%);text-align:center;animation:sobe .45s ease}
+@keyframes sobe{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.esc-titulo{color:var(--rosa);letter-spacing:3px;font-size:13px;text-transform:uppercase;margin-bottom:12px}
+.esc-pergunta{font-family:Georgia,serif;font-size:clamp(22px,3.3vw,34px);margin:0 0 26px;font-weight:400;line-height:1.3}
+.opcoes{display:flex;flex-direction:column;gap:12px}
+.opcao{display:flex;gap:16px;align-items:center;text-align:left;width:100%;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid var(--linha);color:var(--ink);border-radius:14px;padding:16px 18px;font-size:clamp(16px,2vw,19px);transition:background .15s,border-color .15s,transform .15s}
+.opcao:hover{background:rgba(231,163,180,.14);border-color:var(--rosa);transform:translateX(3px)}
+.opcao b{flex:0 0 38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--marinho);color:var(--rosa);font-size:17px}
+.opcao.escolhida{background:rgba(231,163,180,.25);border-color:var(--rosa)}
+.opcoes.travado .opcao:not(.escolhida){opacity:.3;pointer-events:none}
+.esc-nota{margin-top:18px;font-size:13px;color:var(--muted)}
+
+/* Fim de episódio */
+#fim{flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;padding:28px;text-align:center}
+.cartela{max-width:660px;margin:9vh auto 26px;font-family:Georgia,serif;font-size:clamp(20px,2.7vw,28px);line-height:1.5}
+.cartela small{display:block;font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;color:var(--muted);margin-top:10px}
+.numeros{display:flex;gap:16px;justify-content:center;margin:0 0 30px;flex-wrap:wrap}
+.numeros a{display:block;text-decoration:none;color:var(--ink);border:1px solid var(--linha);border-radius:14px;padding:14px 22px;min-width:210px;background:var(--card)}
+.numeros strong{display:block;font-size:34px;color:var(--rosa)}
+.numeros small{color:var(--muted)}
+.proximo{display:flex;gap:16px;align-items:center;background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:12px;max-width:560px;margin:0 auto 24px;text-align:left}
+.proximo .mini{width:170px;aspect-ratio:16/9;border-radius:8px;background-size:cover;background-position:center;flex:0 0 auto}
+.proximo .t{font-size:13px;color:var(--muted)}
+.proximo .n{font-size:17px;margin:3px 0 10px}
+
+/* Amiga de IA */
+#amiga{background:radial-gradient(ellipse at 70% 20%,#3a2433 0%,#0d0b10 60%)}
+
+/* Painel de teste */
+#painel{flex-direction:column;overflow:auto;padding:70px 5vw 28px;background:#0f0d13}
+#painel table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0 24px}
+#painel th,#painel td{border-bottom:1px solid var(--linha);padding:8px 6px;text-align:left;vertical-align:top}
+#painel th{color:var(--muted);font-weight:500}
+.nivel{font-size:12px;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.nivel.r{color:#ff9d9d;border:1px solid #ff9d9d88}
+.nivel.p{color:#9de0b0;border:1px solid #9de0b088}
+.nivel.n{color:#cfc6cb;border:1px solid #cfc6cb66}
+.resumo-sinais{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 18px}
+.resumo-sinais div{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 16px;min-width:150px}
+.resumo-sinais strong{display:block;font-size:28px}
+
+/* Sempre à mão */
+#fixos{position:fixed;top:14px;right:14px;z-index:30;display:none;gap:8px}
+#fixos.on{display:flex}
+#fixos button{background:rgba(0,0,0,.55);border:1px solid var(--linha);color:var(--ink);border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer}
+#fixos #sair{border-color:#ff9d9d88}
+#painel-ajuda{position:fixed;top:54px;right:14px;z-index:31;background:#1a1620;border:1px solid var(--linha);border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.6;display:none;max-width:300px}
+#painel-ajuda.on{display:block}
+#painel-ajuda a{color:var(--rosa)}
+
+.offline-caixa{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:16px 18px;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.offline-caixa p{margin:0 0 10px;color:var(--muted);font-size:14px}
+.barra-off{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-bottom:10px;max-width:420px}
+.barra-off i{display:block;height:100%;width:0;background:var(--rosa);transition:width .3s}
+.chk{font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:center;cursor:pointer}
+.chk input{width:18px;height:18px}
+#ytbox{position:absolute;inset:0;display:none;background:#000}
+#ytbox.on{display:block}
+#ytbox iframe{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border:0}
+#girar{position:absolute;inset:0;z-index:8;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(0,0,0,.82);text-align:center;padding:24px;color:var(--muted);font-size:15px}
+#girar .ic{font-size:44px}
+@media (max-width:700px){
+  .hero{min-height:52vh;padding:80px 20px 28px}
+  .lista{padding:10px 16px 40px}
+  .rodape{padding:0 16px 30px}
+  .eps{grid-template-columns:1fr}
+  #fixos{top:10px;right:10px}
+  #fixos button{padding:5px 10px;font-size:12px}
+  .caixa-consent{padding:16px 18px;font-size:14px}
+  .numeros a{min-width:150px;padding:12px 16px}
+  .proximo{flex-direction:column;align-items:flex-start}
+  .proximo .mini{width:100%}
+}
+@media (max-height:500px){
+  .esc-caixa{width:min(900px,100%)}
+  .esc-pergunta{font-size:18px;margin-bottom:12px}
+  .esc-titulo{margin-bottom:6px}
+  .opcoes{gap:7px}
+  .opcao{padding:8px 12px;font-size:15px}
+  .opcao b{flex-basis:28px;height:28px;font-size:14px}
+  .esc-nota{margin-top:8px}
+}
+@media (orientation:portrait) and (max-width:700px){
+  #player.tocando .offline-caixa{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:16px 18px;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.offline-caixa p{margin:0 0 10px;color:var(--muted);font-size:14px}
+.barra-off{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-bottom:10px;max-width:420px}
+.barra-off i{display:block;height:100%;width:0;background:var(--rosa);transition:width .3s}
+.chk{font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:center;cursor:pointer}
+.chk input{width:18px;height:18px}
+#ytbox{position:absolute;inset:0;display:none;background:#000}
+#ytbox.on{display:block}
+#ytbox iframe{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border:0}
+#girar{display:flex}
+}
+</style>
+</head>
+<body>
+
+<div id="fixos">
+  <button id="ajuda" title="180 e 190">Precisa de ajuda?</button>
+  <button id="sair" title="Fecha a novela na hora (atalho: tecla Esc duas vezes)">Sair rápido</button>
+</div>
+<div id="painel-ajuda" role="dialog">
+  <strong>Ligue 180</strong>: Central de Atendimento à Mulher. Funciona 24 horas, é gratuita e não precisa se identificar.<br>
+  <strong>Em perigo agora, ligue 190.</strong><br>
+  <a href="#" id="fechar-ajuda">fechar</a>
+</div>
+
+<!-- 1. Idade -->
+<section id="idade" class="tela centro">
+  <div class="selo"><span>18+</span><span>Feito com IA</span><span>Protótipo · teste interno</span></div>
+  <h1>Tudo o que ela vê</h1>
+  <p class="sub">Uma novela interativa</p>
+  <p class="texto">Esta história mostra uma relação de controle, com cenas de tensão emocional. É indicada para maiores de 18 anos.</p>
+  <div class="linha-btns">
+    <button class="btn" id="tenho18">Tenho 18 anos ou mais</button>
+    <button class="btn sec" id="nao18">Tenho menos de 18</button>
+  </div>
+</section>
+
+<!-- 2. Consentimento (1º tempo) -->
+<section id="consent" class="tela centro">
+  <h1 style="font-size:clamp(28px,4vw,42px)">Antes de começar</h1>
+  <div class="caixa-consent">
+    <span class="provisorio">Texto provisório · aguarda revisão jurídica</span>
+    <ul>
+      <li>Ao longo da história, você vai aconselhar a Catarina. Cada conselho é definitivo e muda o que acontece depois.</li>
+      <li>Seus conselhos ficam guardados <strong>só neste aparelho</strong>, para a história lembrar do que você escolheu.</li>
+      <li>Nada sai daqui sem você aceitar. No fim da temporada, a Catarina vai te fazer um convite, e só então você decide.</li>
+      <li>Se em algum momento precisar, use o botão <strong>Precisa de ajuda?</strong> no canto da tela, ou <strong>Sair rápido</strong> para fechar tudo na hora.</li>
+    </ul>
+  </div>
+  <div class="linha-btns"><button class="btn" id="aceito">Entendi, quero assistir</button></div>
+</section>
+
+<!-- 3. Temporada -->
+<section id="temporada" class="tela">
+  <div class="hero" id="hero">
+    <div>
+      <div class="selo" style="justify-content:flex-start;margin-bottom:12px"><span>18+</span><span>Temporada 1</span><span>Feito com IA</span></div>
+      <h1>Tudo o que ela vê</h1>
+      <div class="meta" id="hero-meta"></div>
+      <p id="hero-sinopse"></p>
+      <div class="linha-btns" style="justify-content:flex-start">
+        <button class="btn" id="hero-play">▶ Assistir</button>
+      </div>
+    </div>
+  </div>
+  <div class="lista">
+    <h2>Episódios</h2>
+    <div class="eps" id="eps"></div>
+  </div>
+  <div class="lista" id="offline" style="display:none;padding-top:0">
+    <div class="offline-caixa">
+      <div>
+        <h2 style="margin:0 0 4px">Assistir sem internet</h2>
+        <p id="off-txt">Guarde a temporada no celular (cerca de 319 MB). Use o Wi-Fi.</p>
+        <div class="barra-off"><i id="off-barra"></i></div>
+        <label class="chk"><input type="checkbox" id="off-auto"> Baixar sozinho quando eu estiver no Wi-Fi</label>
+      </div>
+      <div class="linha-btns" style="justify-content:flex-start">
+        <button class="btn peq" id="off-baixar">Baixar temporada</button>
+        <button class="btn sec peq" id="off-apagar" style="display:none">Apagar do celular</button>
+      </div>
+    </div>
+  </div>
+  <div class="rodape">
+    <span>História de ficção. Se você ou alguém que você conhece vive algo parecido, ligue 180. Em perigo agora, ligue 190.</span>
+    <a href="#" id="abrir-painel">Painel de teste</a>
+  </div>
+</section>
+
+<!-- 4. Player -->
+<section id="player" class="tela">
+  <video id="vA" playsinline preload="auto"></video>
+  <video id="vB" playsinline preload="auto"></video>
+  <div id="ytbox"><div id="yt"></div></div>
+  <div class="carregando" id="carregando">Carregando…</div>
+  <div id="girar"><div class="ic">📱↻</div><div>Vire o celular de lado para assistir.</div><button class="btn sec peq" id="girar-ok">Assistir assim mesmo</button></div>
+  <div class="topo"><button id="voltar">← Episódios</button><span class="tit" id="tit-ep"></span></div>
+  <div class="hud">
+    <button id="pausa">Pausar</button>
+    <button id="tela-cheia">Tela cheia</button>
+    <span class="info" id="info"></span>
+  </div>
+  <div class="barra"><i id="progresso"></i></div>
+  <div id="escolha" aria-live="polite">
+    <div class="esc-caixa">
+      <div class="esc-titulo" id="esc-titulo"></div>
+      <h2 class="esc-pergunta" id="esc-pergunta"></h2>
+      <div class="opcoes" id="opcoes"></div>
+      <p class="esc-nota">Sua escolha é definitiva.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Fim do episódio -->
+<section id="fim" class="tela">
+  <p class="cartela" id="fim-cartela"></p>
+  <div class="numeros">
+    <a href="tel:180"><strong>180</strong><small>Central de Atendimento à Mulher</small></a>
+    <a href="tel:190"><strong>190</strong><small>Em perigo agora</small></a>
+  </div>
+  <div id="fim-proximo"></div>
+  <div class="linha-btns"><button class="btn sec" id="fim-voltar">Voltar aos episódios</button></div>
+</section>
+
+<!-- 6. Convite da amiga de IA (2º tempo do consentimento) -->
+<section id="amiga" class="tela centro">
+  <p class="sub">Fim da temporada 1</p>
+  <h1 style="font-size:clamp(28px,4.5vw,48px)">A Catarina quer conversar com você</h1>
+  <p class="texto">Você acompanhou a Catarina do começo ao fim. Se quiser, ela pode continuar com você como uma amiga: para conversar sobre a história, sobre a sua vida ou sobre o que você quiser.</p>
+  <div class="caixa-consent">
+    <span class="provisorio">Texto provisório · aguarda revisão jurídica</span>
+    <ul>
+      <li>Se você aceitar, os conselhos que deu durante a novela passam a ser usados pela amiga de IA para conhecer você melhor.</li>
+      <li>Se não aceitar, nada sai deste aparelho. Você pode mudar de ideia quando quiser.</li>
+    </ul>
+  </div>
+  <div class="linha-btns">
+    <button class="btn" id="amiga-sim">Aceito conversar com a Catarina</button>
+    <button class="btn sec" id="amiga-nao">Agora não</button>
+  </div>
+  <p class="miudo" id="amiga-msg"></p>
+</section>
+
+<!-- 7. Painel de teste -->
+<section id="painel" class="tela">
+  <div class="linha-btns" style="justify-content:space-between;align-items:center">
+    <h1 style="font-size:28px;margin:0">Painel de teste</h1>
+    <button class="btn sec peq" id="painel-voltar">← Voltar</button>
+  </div>
+  <p class="texto" style="margin:10px 0 0;max-width:none">Só para o Felipe e a equipe conferirem. Aqui aparecem as escolhas gravadas neste computador e a leitura provisória de cada uma (risco, neutro ou proteção), que ainda precisa da sua revisão.</p>
+  <div class="resumo-sinais" id="painel-resumo"></div>
+  <div id="painel-tabela"></div>
+  <div class="linha-btns" style="justify-content:flex-start">
+    <button class="btn peq" id="exportar">Baixar registro (.json)</button>
+    <button class="btn sec peq" id="zerar">Apagar tudo e recomeçar a temporada</button>
+  </div>
+</section>
+
+<script>
+const EPS = [{"n": 1, "titulo": "O que ela vê", "pasta": "Ep01/videos/", "corte": 8.5, "img": "app_imagens/ep01.jpg", "min": 26, "sinopse": "Catarina é professora, tem um marido que todos admiram e acaba de ser indicada para coordenadora. Mas cada boa notícia parece custar alguma coisa em casa.", "passos": [{"v": "Ep01_cena00_abertura_1080p.mp4"}, {"v": "Ep01_teaser_1080p.mp4"}, {"v": "Ep01_ato1_escola_1080p.mp4"}, {"v": "Ep01_ato2_jantar_1080p.mp4"}, {"esc": {"id": "escolha1", "titulo": "O sábado", "pergunta": "Sábado: a pousada com o Rafael ou o aniversário da Mari. O que você diria à Catarina?", "opcoes": {"A": {"texto": "Desmarca com a Mari. Ele preparou tudo com tanto carinho.", "video": "Ep01_escolha1_A_1080p.mp4", "sinal": "isolamento: abre mão da amiga", "nivel": "r"}, "B": {"texto": "Propõe o aniversário no sábado e a pousada no domingo.", "video": "Ep01_escolha1_B_1080p.mp4", "sinal": "equilíbrio: mantém a rede de apoio", "nivel": "p"}, "C": {"texto": "Diz que vai pensar e muda de assunto.", "video": "Ep01_escolha1_C_1080p.mp4", "sinal": "evita o conflito", "nivel": "n"}}}}, {"v": "Ep01_cena13_madrugada_1080p.mp4"}, {"v": "Ep01_ato3a_cafe_1080p.mp4"}, {"esc": {"id": "escolha2", "titulo": "A notícia", "pergunta": "Catarina ainda não contou ao Rafael que foi indicada para coordenadora. O que você diria a ela?", "opcoes": {"A": {"texto": "Conta agora, no café. Ele é teu marido.", "video": "Ep01_escolha2_A_1080p.mp4", "sinal": "transparência no casal", "nivel": "n"}, "B": {"texto": "Espera até sexta, quando tiver certeza.", "video": "Ep01_escolha2_BC_1080p.mp4", "sinal": "autonomia: decide por si", "nivel": "p"}, "C": {"texto": "Espera um momento bom. Hoje não.", "video": "Ep01_escolha2_BC_1080p.mp4", "sinal": "medo da reação dele", "nivel": "r"}}}}, {"v": "Ep01_ato3b_oficina_escola_festa_1080p.mp4"}, {"dep": "escolha2", "videos": {"A": "Ep01_cena19_sussurro_A_1080p.mp4", "B": "Ep01_cena19_sussurro_BC_1080p.mp4", "C": "Ep01_cena19_sussurro_BC_1080p.mp4"}}, {"v": "Ep01_ato3c_silencio_1080p.mp4"}, {"esc": {"id": "escolha3", "titulo": "O silêncio", "pergunta": "Rafael não fala com Catarina desde a festa. O que você acha que ela deveria pensar?", "opcoes": {"A": {"texto": "Ele está cansado. Amanhã passa.", "video": "Ep01_escolha3_A_1080p.mp4", "sinal": "minimiza o castigo", "nivel": "r"}, "B": {"texto": "Ele ficou chateado de saber por último. Ela devia ter contado.", "video": "Ep01_escolha3_B_1080p.mp4", "sinal": "culpa a si mesma", "nivel": "r"}, "C": {"texto": "Não é justo ele castigar com silêncio.", "video": "Ep01_escolha3_C_1080p.mp4", "sinal": "reconhece o castigo pelo silêncio", "nivel": "p"}}}}, {"v": "Ep01_cena23_casa_aberta_1080p.mp4"}, {"v": "Ep01_ato4a_quinta_escola_1080p.mp4"}, {"dep": "escolha1", "videos": {"A": "Ep01_cena26_mari_A_1080p.mp4", "B": "Ep01_cena26_mari_B_1080p.mp4", "C": "Ep01_cena26_mari_C_1080p.mp4"}}, {"v": "Ep01_ato4b_mari_padaria_1080p.mp4"}, {"v": "Ep01_ato5a_sexta_resposta_1080p.mp4"}, {"esc": {"id": "escolha4", "titulo": "A resposta", "pergunta": "Helena quer a resposta hoje. O Rafael não gostou. O que você diria à Catarina?", "opcoes": {"A": {"texto": "Aceita. A vaga é tua, a decisão também.", "video": "Ep01_escolha4_A_1080p.mp4", "sinal": "autonomia profissional", "nivel": "p"}, "B": {"texto": "Pede mais uma semana para conversar com o Rafael.", "video": "Ep01_escolha4_B_1080p.mp4", "sinal": "pede permissão para decidir", "nivel": "r"}, "C": {"texto": "Recusa. Não é o momento.", "video": "Ep01_escolha4_C_1080p.mp4", "sinal": "abre mão da carreira", "nivel": "r"}}}}, {"v": "Ep01_ato5b_girassois_1080p.mp4"}, {"dep": "escolha4", "videos": {"A": "Ep01_cena32_var_A_1080p.mp4", "B": null, "C": "Ep01_cena32_var_C_1080p.mp4"}}, {"v": "Ep01_ato5c_contas_1080p.mp4"}, {"dep": "escolha1", "videos": {"A": "Ep01_cena33_var_A_1080p.mp4", "B": "Ep01_cena33_var_B_1080p.mp4", "C": "Ep01_cena33_var_C_1080p.mp4"}}, {"v": "Ep01_final_chaves_1080p.mp4"}]}, {"n": 2, "titulo": "A conta", "pasta": "Ep02/videos/", "corte": 8.2, "img": "app_imagens/ep02.jpg", "min": 26, "sinopse": "No fim de semana perfeito na serra, Catarina tenta falar do salário e não acha a hora. No dia do pagamento, descobre como a mudança foi feita.", "passos": [{"v": "Ep02_teaser_1080p.mp4"}, {"v": "Ep02_ato1a_serra_1080p.mp4"}, {"esc": {"id": "escolha1", "titulo": "A hora certa", "pergunta": "Rafael perguntou: \"Agora?\" O que você diria à Catarina?", "opcoes": {"A": {"texto": "Fala agora. É o teu salário.", "video": "Ep02_escolha1_A_1080p.mp4", "sinal": "fala sobre o próprio dinheiro", "nivel": "p"}, "B": {"texto": "Deixa pra casa. Não estraga o jantar.", "video": "Ep02_escolha1_B_1080p.mp4", "sinal": "medo antecipado: evita o assunto", "nivel": "r"}, "C": {"texto": "Pergunta só como vai funcionar, sem brigar.", "video": "Ep02_escolha1_C_1080p.mp4", "sinal": "busca informação sem confronto", "nivel": "n"}}}}, {"v": "Ep02_ato1b_domingo_1080p.mp4"}, {"v": "Ep02_ato2_escola_1080p.mp4"}, {"v": "Ep02_ato3a_banco_1080p.mp4"}, {"esc": {"id": "escolha2", "titulo": "A porta", "pergunta": "A Catarina pode cancelar a mudança do salário. O que você diria a ela?", "opcoes": {"A": {"texto": "Cancela agora. O salário é teu.", "video": "Ep02_escolha2_A_1080p.mp4", "sinal": "autonomia financeira", "nivel": "p"}, "B": {"texto": "Conversa com o Rafael antes.", "video": "Ep02_escolha2_B_1080p.mp4", "sinal": "pede permissão para agir", "nivel": "r"}, "C": {"texto": "Troca só a senha hoje e pensa no resto.", "video": "Ep02_escolha2_C_1080p.mp4", "sinal": "proteção gradual", "nivel": "p"}}}}, {"v": "Ep02_ato3b_porto_cartao_1080p.mp4"}, {"esc": {"id": "escolha3", "titulo": "O cartão", "pergunta": "Rafael deu um cartão com limite de 500, e a conta vai para ele. O que você acha?", "opcoes": {"A": {"texto": "É prático. Ele está ajudando.", "video": "Ep02_escolha3_A_1080p.mp4", "sinal": "normaliza o controle financeiro", "nivel": "r"}, "B": {"texto": "Ela devia ter a própria conta, com o próprio salário.", "video": "Ep02_escolha3_B_1080p.mp4", "sinal": "autonomia financeira", "nivel": "p"}, "C": {"texto": "Ela precisa ao menos ver quanto entra e quanto sai.", "video": "Ep02_escolha3_C_1080p.mp4", "sinal": "quer transparência financeira", "nivel": "n"}}}}, {"v": "Ep02_ato4_familia_1080p.mp4"}, {"v": "Ep02_ato5_senha_1080p.mp4"}]}, {"n": 3, "titulo": "O aniversário", "pasta": "Ep03/videos/", "corte": 8.0, "img": "app_imagens/ep03.jpg", "min": 25, "sinopse": "Rafael liga a localização do celular dela \"por segurança\". Na festa da melhor amiga, ele aparece sem convite e encanta todo mundo. Só a Mari vê o que acontece no portão.", "passos": [{"v": "Ep03_teaser_1080p.mp4"}, {"v": "Ep03_ato1a_segunda_1080p.mp4"}, {"esc": {"id": "escolha1", "titulo": "O pontinho no mapa", "pergunta": "Rafael ligou a localização do celular da Catarina \"por segurança\". O que você diria a ela?", "opcoes": {"A": {"texto": "Deixa ligado. É pela tua segurança.", "video": "Ep03_escolha1_A_1080p.mp4", "sinal": "normaliza a vigilância", "nivel": "r"}, "B": {"texto": "Desliga. Tu não precisa ser vigiada.", "video": "Ep03_escolha1_B_1080p.mp4", "sinal": "defende a própria privacidade", "nivel": "p"}, "C": {"texto": "Pede pra ele compartilhar a dele também.", "video": "Ep03_escolha1_C_1080p.mp4", "sinal": "busca reciprocidade", "nivel": "n"}}}}, {"v": "Ep03_ato1b_escola_1080p.mp4"}, {"dep": "escolha1", "videos": {"A": "Ep03_porto_AC_1080p.mp4", "B": "Ep03_porto_B_1080p.mp4", "C": "Ep03_porto_AC_1080p.mp4"}}, {"v": "Ep03_ato2_semana_1080p.mp4"}, {"v": "Ep03_ato3_festa_1080p.mp4"}, {"v": "Ep03_ato4_carro_1080p.mp4"}, {"esc": {"id": "escolha2", "titulo": "O braço", "pergunta": "Na saída da festa, Rafael apertou o braço da Catarina. Como você acha que ela deve entender isso?", "opcoes": {"A": {"texto": "Foi sem querer. Ele estava com pressa.", "video": "Ep03_escolha2_A_1080p.mp4", "sinal": "minimiza o contato físico", "nivel": "r"}, "B": {"texto": "Ninguém aperta assim quem ama.", "video": "Ep03_escolha2_B_1080p.mp4", "sinal": "reconhece o controle físico", "nivel": "p"}, "C": {"texto": "Ela precisa anotar o que aconteceu, pra não esquecer.", "video": "Ep03_escolha2_C_1080p.mp4", "sinal": "registra o que aconteceu", "nivel": "p"}}}}, {"v": "Ep03_ato5a_domingo_1080p.mp4"}, {"esc": {"id": "escolha3", "titulo": "Eu vi", "pergunta": "A Mari disse: \"Eu vi.\" O que a Catarina responde?", "opcoes": {"A": {"texto": "Não foi nada. Tu viu errado.", "video": "Ep03_escolha3_A_1080p.mp4", "sinal": "nega e protege o agressor", "nivel": "r"}, "B": {"texto": "Eu sei. Eu também vi.", "video": "Ep03_escolha3_B_1080p.mp4", "sinal": "revela à rede de apoio", "nivel": "p"}, "C": {"texto": "Agora não. Mas eu te procuro.", "video": "Ep03_escolha3_C_1080p.mp4", "sinal": "adia, mas mantém a rede", "nivel": "n"}}}}, {"dep": "escolha1", "videos": {"A": "Ep03_ato5b_final_AC_1080p.mp4", "B": "Ep03_ato5b_final_B_1080p.mp4", "C": "Ep03_ato5b_final_AC_1080p.mp4"}}]}];
+/* Fonte dos vídeos: "local" = pastas EpXX/videos ao lado deste arquivo; "bunny" = Bunny Stream */
+const FONTE = {"tipo":"web"};
+const CHAVE = "tqev_temporada1";
+const $ = id => document.getElementById(id);
+
+/* ---------- Estado guardado no aparelho ---------- */
+let E = carregar();
+function carregar(){
+  try{ const s = JSON.parse(localStorage.getItem(CHAVE)); if(s) return s; }catch(e){}
+  return {idade:false, consent1:null, consent2:null, eps:{}};
+}
+function salvar(){ try{ localStorage.setItem(CHAVE, JSON.stringify(E)); }catch(e){} }
+function epEstado(n){ return E.eps[n] || (E.eps[n] = {passo:0, tempo:0, escolhas:{}, concluido:false, inicio:null, fim:null}); }
+
+/* ---------- Telas ---------- */
+function mostrar(id){
+  document.querySelectorAll(".tela").forEach(t => t.classList.toggle("ativa", t.id === id));
+  $("fixos").classList.toggle("on", !["idade"].includes(id));
+}
+
+/* ---------- Temporada ---------- */
+function epAtualSugerido(){
+  for(const ep of EPS){ const s = epEstado(ep.n); if(!s.concluido && (s.passo > 0 || s.tempo > 0)) return ep; }
+  for(const ep of EPS){ if(!epEstado(ep.n).concluido) return ep; }
+  return EPS[0];
+}
+function rotuloEstado(ep){
+  const s = epEstado(ep.n);
+  if(s.concluido) return "Assistido";
+  if(s.passo > 0 || s.tempo > 0) return "Continuar";
+  return "Novo";
+}
+function progressoEp(ep){
+  const s = epEstado(ep.n);
+  if(s.concluido) return 100;
+  return Math.round(100 * s.passo / ep.passos.length);
+}
+function montarTemporada(){
+  const ep = epAtualSugerido(), s = epEstado(ep.n);
+  $("hero").style.backgroundImage = `url('${ep.img}')`;
+  $("hero-meta").textContent = `Episódio ${ep.n} · ${ep.titulo} · ${ep.min} min`;
+  $("hero-sinopse").textContent = ep.sinopse;
+  $("hero-play").textContent = (s.passo > 0 || s.tempo > 0) && !s.concluido ? `▶ Continuar episódio ${ep.n}` : `▶ Assistir episódio ${ep.n}`;
+  $("hero-play").onclick = () => abrirEpisodio(ep);
+  const box = $("eps"); box.innerHTML = "";
+  EPS.forEach(e => {
+    const b = document.createElement("button");
+    b.className = "ep-card";
+    b.innerHTML = `<div class="img" style="background-image:url('${e.img}')"><span class="num">${e.n}</span><span class="estado">${rotuloEstado(e)}</span></div>
+      <div class="barra-ep"><i style="width:${progressoEp(e)}%"></i></div>
+      <div class="corpo"><h3>${e.titulo} <span style="color:var(--muted);font-weight:400;font-size:14px">· ${e.min} min</span></h3><p>${e.sinopse}</p></div>`;
+    b.onclick = () => abrirEpisodio(e);
+    box.appendChild(b);
+  });
+  mostrar("temporada");
+  atualizarOffline();
+}
+
+/* ---------- Player ---------- */
+let EP = null, ST = null, fila = [], tocados = 0, totalPrevisto = 1, atual = 0, salvarTimer = null;
+const vids = [$("vA"), $("vB")];
+function url(a){
+  if(FONTE.tipo === "web") return "videos/" + encodeURIComponent(a);
+  if(FONTE.tipo === "bunny"){ const g = FONTE.videos[a]; return g ? `https://${FONTE.host}/${g}/playlist.m3u8` : null; }
+  return EP.pasta + encodeURIComponent(a);
+}
+
+function abrirEpisodio(ep){
+  EP = ep; ST = epEstado(ep.n);
+  if(ST.concluido){
+    if(!confirm(`Você já assistiu ao episódio ${ep.n}. Quer ver de novo? As suas escolhas continuam as mesmas.`)) return;
+    ST.passo = 0; ST.tempo = 0; ST.concluido = false; ST.revendo = true;
+  }
+  if(!ST.inicio) ST.inicio = new Date().toISOString();
+  salvar();
+  $("tit-ep").textContent = `Episódio ${ep.n} · ${ep.titulo}`;
+  tocados = 0; totalPrevisto = ep.passos.length;
+  vids.forEach(v => { v.pause(); v.removeAttribute("src"); v.dataset.arquivo = ""; v.load(); });
+  atual = 0;
+  $("escolha").classList.remove("ativa");
+  mostrar("player");
+  $("player").classList.add("tocando");
+  mostrarHud();
+  document.documentElement.requestFullscreen?.().then(() => screen.orientation?.lock?.("landscape").catch(()=>{})).catch(()=>{});
+  executarPasso(ST.tempo || 0);
+}
+
+/* Resolve um passo em lista de arquivos, ou em escolha */
+function arquivosDoPasso(p){
+  if(p.v) return [p.v];
+  if(p.dep){ const r = ST.escolhas[p.dep]; const f = r ? p.videos[r.opcao] : null; return f ? [f] : []; }
+  return [];
+}
+function proximoEhEscolha(i){ const p = EP.passos[i+1]; return !!(p && p.esc); }
+
+function executarPasso(tempoInicial){
+  if(ST.passo >= EP.passos.length) return terminarEpisodio();
+  const p = EP.passos[ST.passo];
+  $("progresso").style.width = (100 * ST.passo / EP.passos.length) + "%";
+  if(p.esc){
+    const ja = ST.escolhas[p.esc.id];
+    if(ja){ // já escolheu (retomada): toca a consequência, sem perguntar de novo
+      tocar([p.esc.opcoes[ja.opcao].video], tempoInicial, proximoEhEscolha(ST.passo) ? EP.corte : 0);
+    } else {
+      abrirEscolha(p.esc);
+    }
+    return;
+  }
+  const arqs = arquivosDoPasso(p);
+  if(!arqs.length){ ST.passo++; ST.tempo = 0; salvar(); return executarPasso(0); }
+  tocar(arqs, tempoInicial, proximoEhEscolha(ST.passo) ? EP.corte : 0);
+}
+
+function preparar(v, arquivo){
+  if(YT_MODO) return;
+  if(v.dataset.arquivo === arquivo) return;
+  v.dataset.arquivo = arquivo;
+  const u = url(arquivo);
+  if(v._hls){ v._hls.destroy(); v._hls = null; }
+  if(!u){ v.removeAttribute("src"); v.load(); return; }
+  if(u.endsWith(".m3u8") && !v.canPlayType("application/vnd.apple.mpegurl") && window.Hls && Hls.isSupported()){
+    const h = new Hls({capLevelToPlayerSize:true, startLevel:-1}); h.loadSource(u); h.attachMedia(v); v._hls = h;
+  } else { v.src = u; v.load(); }
+}
+function tocar(arqs, tempoInicial, corteFinal){
+  fila = arqs.map((a,i) => ({arquivo:a, cortar: i === arqs.length-1 ? corteFinal : 0}));
+  tocarFila(tempoInicial || 0);
+}
+
+/* ---------- Motor YouTube (vídeos não listados, tocados dentro do app) ---------- */
+const YT_MODO = FONTE.tipo === "youtube";
+let ytp = null, ytPronto = null, ytItem = null, ytPoll = null, ytFimDado = false;
+function ytCarregarApi(){
+  if(ytPronto) return ytPronto;
+  ytPronto = new Promise(res => {
+    window.onYouTubeIframeAPIReady = () => {
+      ytp = new YT.Player("yt", {host:"https://www.youtube-nocookie.com", width:"100%", height:"100%",
+        playerVars:{controls:0, rel:0, playsinline:1, modestbranding:1, iv_load_policy:3, fs:0, disablekb:1, cc_load_policy:0},
+        events:{onReady:() => res(), onStateChange:ytEstado, onError:() => { $("info").textContent = "Não consegui abrir " + (ytItem && ytItem.arquivo) + ". Pulando."; setTimeout(ytFim, 1500); }}});
+    };
+    const s = document.createElement("script"); s.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(s);
+  });
+  return ytPronto;
+}
+function ytEstado(e){
+  if(e.data === 1) $("carregando").classList.remove("on");
+  if(e.data === 3) $("carregando").classList.add("on");
+  if(e.data === 0) ytFim();
+}
+function ytFim(){ if(ytFimDado) return; ytFimDado = true; clearInterval(ytPoll); tocarFila(0); }
+async function ytTocar(item, tempoInicial){
+  await ytCarregarApi();
+  $("ytbox").classList.add("on"); vids.forEach(v => v.classList.remove("visivel"));
+  ytItem = item; ytFimDado = false;
+  const id = FONTE.videos[item.arquivo];
+  if(!id){ $("info").textContent = "Vídeo ainda não publicado: " + item.arquivo; setTimeout(ytFim, 1500); return; }
+  $("carregando").classList.add("on");
+  ytp.loadVideoById({videoId:id, startSeconds:tempoInicial || 0});
+  clearInterval(ytPoll);
+  ytPoll = setInterval(() => {
+    if(!ytp.getDuration) return;
+    const d = ytp.getDuration(), c = ytItem.cortar || 0, tm = ytp.getCurrentTime();
+    if(ytp.getPlayerState() === 1){ ST.tempo = tm; }
+    if(c > 0 && d > 0 && tm >= d - c){ ytp.pauseVideo(); ytFim(); }
+  }, 250);
+  clearInterval(salvarTimer); salvarTimer = setInterval(salvar, 3000);
+}
+function ytPausar(){ ytp && ytp.pauseVideo(); }
+function tocarFila(tempoInicial){
+  if(!fila.length){ ST.passo++; ST.tempo = 0; salvar(); return executarPasso(0); }
+  const item = fila.shift();
+  if(YT_MODO) return ytTocar(item, tempoInicial);
+  const v = vids[atual], outro = vids[1-atual];
+  preparar(v, item.arquivo);
+  v.dataset.cortar = item.cortar || 0;
+  const iniciar = () => { try{ v.currentTime = tempoInicial || 0; }catch(e){} v.play().catch(()=>{}); };
+  if(v.readyState > 0) iniciar(); else v.addEventListener("loadedmetadata", iniciar, {once:true});
+  $("carregando").classList.toggle("on", v.readyState < 3);
+  v.classList.add("visivel"); outro.classList.remove("visivel"); outro.pause();
+  const prox = fila[0]?.arquivo || arquivoPrevisto(ST.passo + 1);
+  if(prox) preparar(outro, prox);
+  $("info").textContent = "";
+  adiantar();
+  clearInterval(salvarTimer);
+  salvarTimer = setInterval(() => { if(!v.paused){ ST.tempo = v.currentTime; salvar(); } }, 3000);
+}
+function arquivoPrevisto(i){
+  const p = EP.passos[i]; if(!p) return null;
+  if(p.esc){ const ja = ST.escolhas[p.esc.id]; return ja ? p.esc.opcoes[ja.opcao].video : null; }
+  return arquivosDoPasso(p)[0] || arquivoPrevisto(i+1);
+}
+function aoTerminarClip(v){
+  if(v !== vids[atual] || v.dataset.fim === "1") return;
+  v.dataset.fim = "1"; setTimeout(() => v.dataset.fim = "", 500);
+  atual = 1 - atual;
+  tocarFila(0);
+}
+vids.forEach(v => {
+  v.addEventListener("ended", () => aoTerminarClip(v));
+  v.addEventListener("timeupdate", () => {
+    const c = parseFloat(v.dataset.cortar || 0);
+    if(c > 0 && v.duration && v.currentTime >= v.duration - c && !v.paused){ v.pause(); aoTerminarClip(v); }
+  });
+  v.addEventListener("canplay", () => { if(v === vids[atual]) $("carregando").classList.remove("on"); });
+  v.addEventListener("waiting", () => { if(v === vids[atual]) $("carregando").classList.add("on"); });
+  v.addEventListener("error", () => {
+    if(v !== vids[atual]) return;
+    $("info").textContent = "Não encontrei o arquivo " + v.dataset.arquivo + ". Pulando.";
+    setTimeout(() => aoTerminarClip(v), 1500);
+  });
+});
+
+/* ---------- Escolha ---------- */
+function abrirEscolha(esc){
+  const n = Object.keys(ST.escolhas).length + 1;
+  $("esc-titulo").textContent = `Escolha ${n} · ${esc.titulo}`;
+  $("esc-pergunta").textContent = esc.pergunta;
+  const box = $("opcoes"); box.innerHTML = ""; box.classList.remove("travado");
+  Object.entries(esc.opcoes).forEach(([letra, o]) => {
+    const b = document.createElement("button");
+    b.className = "opcao"; b.dataset.letra = letra;
+    b.innerHTML = `<b>${letra}</b><span>${o.texto}</span>`;
+    b.onclick = () => escolher(esc, letra, o, b);
+    box.appendChild(b);
+  });
+  $("escolha").classList.add("ativa");
+  setTimeout(() => box.querySelector(".opcao")?.focus(), 450);
+  // pré-carrega a primeira opção no player escondido
+  preparar(vids[atual], esc.opcoes.A.video);
+}
+function escolher(esc, letra, o, botao){
+  const box = $("opcoes");
+  if(box.classList.contains("travado")) return;
+  box.classList.add("travado"); botao.classList.add("escolhida");
+  ST.escolhas[esc.id] = {opcao:letra, texto:o.texto, sinal:o.sinal, nivel:o.nivel, pergunta:esc.pergunta, quando:new Date().toISOString()};
+  salvar();
+  setTimeout(() => {
+    $("escolha").classList.remove("ativa");
+    tocar([o.video], 0, proximoEhEscolha(ST.passo) ? EP.corte : 0);
+  }, 700);
+}
+
+/* ---------- Fim ---------- */
+function terminarEpisodio(){
+  clearInterval(salvarTimer);
+  if(YT_MODO){ clearInterval(ytPoll); ytPausar(); $("ytbox").classList.remove("on"); }
+  vids.forEach(v => v.pause());
+  ST.concluido = true; ST.passo = 0; ST.tempo = 0; delete ST.revendo;
+  ST.fim = ST.fim || new Date().toISOString();
+  salvar();
+  if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  const prox = EPS.find(e => e.n === EP.n + 1);
+  $("fim-cartela").innerHTML = `Fim do episódio ${EP.n} · <em>${EP.titulo}</em><small>História de ficção. Se você ou alguém que você conhece vive algo parecido, há quem ajude.</small>`;
+  const pp = $("fim-proximo"); pp.innerHTML = "";
+  if(prox){
+    pp.innerHTML = `<div class="proximo"><div class="mini" style="background-image:url('${prox.img}')"></div>
+      <div><div class="t">Próximo episódio em <span id="contagem">15</span> s</div><div class="n">${prox.n}. ${prox.titulo}</div>
+      <div class="linha-btns" style="justify-content:flex-start"><button class="btn peq" id="ir-prox">▶ Assistir agora</button><button class="btn sec peq" id="parar-cont">Agora não</button></div></div></div>`;
+    let t = 15;
+    const timer = setInterval(() => { t--; const c = $("contagem"); if(c) c.textContent = t; if(t <= 0){ clearInterval(timer); abrirEpisodio(prox); } }, 1000);
+    $("ir-prox").onclick = () => { clearInterval(timer); abrirEpisodio(prox); };
+    $("parar-cont").onclick = () => { clearInterval(timer); pp.innerHTML = ""; };
+    $("fim-voltar").onclick = () => { clearInterval(timer); montarTemporada(); };
+    mostrar("fim");
+  } else {
+    $("fim-voltar").onclick = () => montarTemporada();
+    mostrar("fim");
+    if(E.consent2 === null) setTimeout(() => mostrar("amiga"), 6000);
+  }
+}
+
+/* ---------- Convite da amiga de IA ---------- */
+$("amiga-sim").onclick = () => {
+  E.consent2 = {aceitou:true, quando:new Date().toISOString()}; salvar();
+  $("amiga-msg").textContent = "Obrigada. Neste protótipo, nada é enviado: o aceite fica registrado e aparece no painel de teste.";
+  setTimeout(montarTemporada, 3500);
+};
+$("amiga-nao").onclick = () => {
+  E.consent2 = {aceitou:false, quando:new Date().toISOString()}; salvar();
+  $("amiga-msg").textContent = "Tudo bem. Seus conselhos continuam só neste aparelho.";
+  setTimeout(montarTemporada, 2500);
+};
+
+/* ---------- Painel de teste ---------- */
+function montarPainel(){
+  const linhas = []; const cont = {r:0, n:0, p:0};
+  EPS.forEach(ep => {
+    const s = epEstado(ep.n);
+    ep.passos.filter(p => p.esc).forEach(p => {
+      const r = s.escolhas[p.esc.id];
+      if(r) cont[r.nivel]++;
+      linhas.push(`<tr><td>Ep ${ep.n}</td><td>${p.esc.titulo}</td><td>${r ? r.opcao + ") " + r.texto : "<span style='color:var(--muted)'>ainda não respondida</span>"}</td>
+        <td>${r ? r.sinal : ""}</td><td>${r ? `<span class="nivel ${r.nivel}">${{r:"risco",n:"neutro",p:"proteção"}[r.nivel]}</span>` : ""}</td></tr>`);
+    });
+  });
+  const c2 = E.consent2 ? (E.consent2.aceitou ? "aceitou" : "recusou") : "ainda não perguntado";
+  $("painel-resumo").innerHTML = `<div><small>Risco</small><strong style="color:#ff9d9d">${cont.r}</strong></div>
+    <div><small>Neutro</small><strong>${cont.n}</strong></div><div><small>Proteção</small><strong style="color:#9de0b0">${cont.p}</strong></div>
+    <div><small>Convite da amiga de IA</small><strong style="font-size:18px;margin-top:8px">${c2}</strong></div>`;
+  $("painel-tabela").innerHTML = `<table><tr><th>Ep</th><th>Escolha</th><th>Conselho dado</th><th>Leitura (provisória)</th><th>Nível</th></tr>${linhas.join("")}</table>`;
+  mostrar("painel");
+}
+$("abrir-painel").onclick = e => { e.preventDefault(); montarPainel(); };
+$("painel-voltar").onclick = () => montarTemporada();
+$("exportar").onclick = () => {
+  const blob = new Blob([JSON.stringify({serie:"Tudo o que ela vê", temporada:1, gerado:new Date().toISOString(), estado:E}, null, 2)], {type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "tudo_o_que_ela_ve_escolhas_teste.json"; a.click();
+};
+$("zerar").onclick = () => {
+  if(!confirm("Apagar todas as escolhas e o progresso deste computador?")) return;
+  try{ localStorage.removeItem(CHAVE); }catch(e){}
+  location.reload();
+};
+
+/* ---------- Controles ---------- */
+$("tenho18").onclick = () => { E.idade = true; salvar(); E.consent1 ? montarTemporada() : mostrar("consent"); };
+$("nao18").onclick = () => { document.body.innerHTML = "<div style='display:grid;place-items:center;height:100vh;padding:24px;text-align:center;color:#b9aeb4;font-family:Segoe UI,sans-serif'>Esta novela é só para maiores de 18 anos.<br>Se precisar de ajuda, ligue 180. Em perigo, 190.</div>"; };
+$("aceito").onclick = () => { E.consent1 = {quando:new Date().toISOString()}; salvar(); montarTemporada(); };
+$("voltar").onclick = () => { clearInterval(salvarTimer); if(YT_MODO){ clearInterval(ytPoll); ytPausar(); salvar(); if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); return montarTemporada(); } const v = vids[atual]; if(!v.paused){ ST.tempo = v.currentTime; } vids.forEach(x => x.pause()); salvar(); if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); montarTemporada(); };
+$("pausa").onclick = () => { if(YT_MODO){ if(ytp.getPlayerState() === 1){ ytp.pauseVideo(); salvar(); $("pausa").textContent = "Continuar"; } else { ytp.playVideo(); $("pausa").textContent = "Pausar"; } return; } const v = vids[atual]; if(v.paused){ v.play(); $("pausa").textContent = "Pausar"; } else { v.pause(); ST.tempo = v.currentTime; salvar(); $("pausa").textContent = "Continuar"; } };
+$("tela-cheia").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+$("ajuda").onclick = () => $("painel-ajuda").classList.toggle("on");
+$("fechar-ajuda").onclick = e => { e.preventDefault(); $("painel-ajuda").classList.remove("on"); };
+function sairRapido(){ try{ ytp && ytp.stopVideo(); }catch(e){} vids.forEach(v => { v.pause(); v.removeAttribute("src"); }); location.replace("https://www.google.com/search?q=receita+de+bolo+de+cenoura"); }
+$("sair").onclick = sairRapido;
+let ultimoEsc = 0;
+
+$("girar-ok").onclick = () => $("player").classList.remove("tocando");
+$("player").addEventListener("click", e => { if(e.target.tagName === "VIDEO") mostrarHud(); });
+if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
+let hudTimer = null;
+function mostrarHud(){ $("player").classList.add("mostrar"); clearTimeout(hudTimer); hudTimer = setTimeout(() => $("player").classList.remove("mostrar"), 2500); }
+$("player").addEventListener("mousemove", mostrarHud);
+
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape"){ const t = Date.now(); if(t - ultimoEsc < 600) return sairRapido(); ultimoEsc = t; }
+  if($("escolha").classList.contains("ativa")){
+    const alvo = document.querySelector(`.opcao[data-letra="${e.key.toUpperCase()}"]`);
+    if(alvo) alvo.click();
+  } else if(e.key === " " && $("player").classList.contains("ativa")){ e.preventDefault(); $("pausa").click(); }
+});
+
+
+/* ---------- Guardar vídeos no celular ---------- */
+const CACHE_OK = ("caches" in window) && location.protocol.startsWith("http") && FONTE.tipo === "web";
+const CACHE_VID = "tqev-videos-v1";
+const caminho = rel => new URL(rel, location.href).pathname;
+const emAndamento = new Set();
+async function guardar(rel){
+  if(!CACHE_OK || !rel) return false;
+  const p = caminho(rel);
+  if(emAndamento.has(p)) return false;
+  try{
+    const c = await caches.open(CACHE_VID);
+    if(await c.match(p)) return true;
+    emAndamento.add(p);
+    const r = await fetch(rel, {cache:"no-store"});
+    if(r.ok && r.status === 200){ await c.put(p, r); return true; }
+  }catch(e){} finally{ emAndamento.delete(p); }
+  return false;
+}
+function economizaDados(){ return navigator.connection && navigator.connection.saveData; }
+function noWifi(){ const c = navigator.connection; return !!(c && (c.type === "wifi" || c.type === "ethernet")); }
+/* enquanto ela assiste, baixa o próximo trecho e, antes de uma escolha, as três respostas */
+function adiantar(){
+  if(!CACHE_OK || economizaDados()) return;
+  const alvo = [];
+  for(let i = ST.passo; i < Math.min(EP.passos.length, ST.passo + 3); i++){
+    const p = EP.passos[i];
+    if(p.esc){ const ja = ST.escolhas[p.esc.id]; if(ja) alvo.push(p.esc.opcoes[ja.opcao].video); else Object.values(p.esc.opcoes).forEach(o => alvo.push(o.video)); }
+    else arquivosDoPasso(p).forEach(a => alvo.push(a));
+  }
+  (async () => { for(const a of alvo) await guardar(url(a)); })();
+}
+function todosArquivos(){
+  const s = new Set();
+  EPS.forEach(ep => { const old = EP; EP = ep; ep.passos.forEach(p => {
+    if(p.v) s.add(url(p.v));
+    else if(p.dep) Object.values(p.videos).forEach(v => v && s.add(url(v)));
+    else Object.values(p.esc.opcoes).forEach(o => s.add(url(o.video)));
+  }); EP = old; });
+  return [...s];
+}
+let baixandoTudo = false;
+async function baixarTemporada(silencioso){
+  if(!CACHE_OK || baixandoTudo) return; baixandoTudo = true;
+  try{ await navigator.storage?.persist?.(); }catch(e){}
+  const lista = todosArquivos(); let ok = 0;
+  $("off-baixar").disabled = true;
+  for(const a of lista){
+    if(await guardar(a)) ok++;
+    $("off-barra").style.width = (100 * ok / lista.length) + "%";
+    $("off-txt").textContent = `Guardando no celular… ${ok} de ${lista.length} partes`;
+  }
+  baixandoTudo = false; $("off-baixar").disabled = false;
+  atualizarOffline();
+}
+async function atualizarOffline(){
+  if(!CACHE_OK){ $("offline").style.display = "none"; return; }
+  $("offline").style.display = "";
+  $("off-auto").checked = !!E.autoWifi;
+  const lista = todosArquivos(); const c = await caches.open(CACHE_VID);
+  let tem = 0; for(const a of lista) if(await c.match(caminho(a))) tem++;
+  $("off-barra").style.width = (100 * tem / lista.length) + "%";
+  if(baixandoTudo) return;
+  if(tem === lista.length){ $("off-txt").textContent = "Temporada guardada neste celular. Dá para assistir sem internet."; $("off-baixar").style.display = "none"; $("off-apagar").style.display = ""; }
+  else { $("off-txt").textContent = tem ? `Parte da temporada já está no celular (${tem} de ${lista.length}). Use o Wi-Fi para guardar o resto (cerca de 319 MB no total).` : "Guarde a temporada no celular (cerca de 319 MB). Use o Wi-Fi."; $("off-baixar").style.display = ""; $("off-apagar").style.display = tem ? "" : "none"; }
+}
+$("off-baixar").onclick = () => baixarTemporada(false);
+$("off-apagar").onclick = async () => { await caches.delete(CACHE_VID); atualizarOffline(); };
+$("off-auto").onchange = e => { E.autoWifi = e.target.checked; salvar(); if(E.autoWifi && noWifi()) baixarTemporada(true); };
+navigator.connection?.addEventListener?.("change", () => { if(E.autoWifi && noWifi()) baixarTemporada(true); });
+
+/* ---------- Início ---------- */
+if(YT_MODO) ytCarregarApi();
+if(CACHE_OK && E.autoWifi && noWifi()) setTimeout(() => baixarTemporada(true), 3000);
+if(!E.idade) mostrar("idade");
+else if(!E.consent1) mostrar("consent");
+else montarTemporada();
+</script>
+</body>
+</html>
